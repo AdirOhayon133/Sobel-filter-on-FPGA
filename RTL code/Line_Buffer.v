@@ -3,6 +3,7 @@
 module Line_Buffer (
 
 input  Clk,
+input  rst,
 input  data_valid_in,
 input  rd_data_in,
 input  [7:0] data_in,
@@ -11,9 +12,9 @@ output  [23:0] data_out
 );
 
 // Declare internal signals
-reg [7:0] line_B [511:0];   
-reg [8:0] wrPntr = 9'd0;    
-reg [8:0] rdPntr = 9'd0;    
+reg [7:0] line_B [1279:0];   
+reg [10:0] wrPntr = 11'd0;    
+reg [10:0] rdPntr = 11'd0;    
 
  
 // Generate data_out based on read pointer
@@ -28,9 +29,12 @@ end
 
 // Increment write pointer
 always @(posedge Clk) begin
-if (data_valid_in) begin
-if (wrPntr == 9'd511) begin
-wrPntr <= 9'd0;  // Wrap around if the write pointer reaches the maximum value
+if (rst) begin
+wrPntr <= 11'd0;
+end
+else if (data_valid_in) begin
+if (wrPntr == 11'd1279) begin
+wrPntr <= 11'd0;  // Wrap around if the write pointer reaches the maximum value
 end else begin
 wrPntr <= wrPntr + 1;  // Increment write pointer
 end
@@ -39,9 +43,12 @@ end
 
 // Increment read pointer
 always @(posedge Clk) begin
-if (rd_data_in) begin
-if (rdPntr == 9'd511) begin
-rdPntr <= 9'd0;  // Wrap around if the read pointer reaches the maximum value
+if (rst) begin
+rdPntr <= 11'd0;
+end
+else if (rd_data_in) begin
+if (rdPntr == 11'd1279) begin
+rdPntr <= 11'd0;  // Wrap around if the read pointer reaches the maximum value
 end else begin
 rdPntr <= rdPntr + 1;  // Increment read pointer
 end
