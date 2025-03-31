@@ -1,28 +1,27 @@
 `timescale 1ns / 1ps
 
-
 module control(
 
 input  Clk,
+input  rst,
 input  pixel_data_valid_in,
+input  [7:0] pixel_data_in,
 input dma_ready_in,
 output pixel_data_valid_out,
-output reg T_last = 1'b0,
-input  [7:0] pixel_data_in,
 output reg [71:0] pixel_data_out
 
     );
     
 // Declare internal signals
-reg [8:0] wr_pixel_c = 9'd0;
+reg [10:0] wr_pixel_c = 11'd0;
 reg [3:0] wr_en_lb = 4'b0000;
 reg [1:0] wr_buffer = 2'b00;
-reg [18:0] total_wr_pixel = 19'd0;
+reg [19:0] total_wr_pixel = 20'd0;
 reg rd_en = 1'b0 ;
-reg [8:0] rd_pixel_c = 9'd0;
+reg [10:0] rd_pixel_c = 11'd0;
 reg [3:0] rd_en_lb = 4'b0000;
 reg [1:0] rd_buffer = 2'b00;
-reg [18:0] total_rd_pixel = 19'd0;
+reg [19:0] total_rd_pixel = 20'd0;
 wire [23:0] lb0_data, lb1_data, lb2_data, lb3_data;    
     
 Line_Buffer lB0 (
@@ -60,10 +59,14 @@ Line_Buffer lB3 (
 assign pixel_data_valid_out = rd_en;    
     
 always @(posedge Clk) begin
-if (pixel_data_valid_in) begin
-if (wr_pixel_c == 9'd511) begin
+if (rst) begin
+wr_pixel_c <= 11'd0;
+wr_buffer <= 2'b00;
+end
+else if (pixel_data_valid_in) begin
+if (wr_pixel_c == 11'd1279) begin
 wr_buffer <= wr_buffer +1;
-wr_pixel_c <= 9'd0;
+wr_pixel_c <= 11'd0;
 end
 else begin
 wr_pixel_c <= wr_pixel_c + 1;
@@ -72,25 +75,12 @@ end
 end
 
 always @(posedge Clk) begin
-if (pixel_data_valid_in) begin
+if (rst) begin
+total_wr_pixel <= 20'd0;
+end
+else if (pixel_data_valid_in) begin
 total_wr_pixel <= total_wr_pixel +1;
 end
-end
-
-always @(posedge Clk) begin
-if (total_wr_pixel > 1535 && total_rd_pixel < 262143) begin
-rd_en <= 1'b1;
-end
-else 
-rd_en <= 1'b0;
-end
-
-always @(posedge Clk) begin
-if (total_rd_pixel == 262142) begin
-T_last <= 1'b1;
-end
-else 
-T_last <= 1'b0;
 end
 
 always @(*) begin
@@ -116,10 +106,14 @@ end
 end
     
 always @(posedge Clk) begin
-if (rd_en && dma_ready_in) begin
-if (rd_pixel_c == 9'd511) begin
+if (rst) begin
+rd_pixel_c <= 11'd0;
+rd_buffer <= 2'b00;
+end
+else if (rd_en && dma_ready_in) begin
+if (rd_pixel_c == 11'd1279) begin
 rd_buffer <= rd_buffer +1;
-rd_pixel_c <= 9'd0;
+rd_pixel_c <= 11'd0;
 end
 else begin
 rd_pixel_c <= rd_pixel_c + 1;
@@ -128,7 +122,10 @@ end
 end
 
 always @(posedge Clk) begin
-if (rd_en && dma_ready_in) begin
+if (rst) begin
+total_rd_pixel <= 20'd0;
+end
+else if (rd_en && dma_ready_in) begin
 total_rd_pixel <= total_rd_pixel +1;
 end
 end
@@ -171,6 +168,14 @@ end
 pixel_data_out = {lb1_data,lb0_data,lb3_data};
 end
 endcase
+end
+
+always @(posedge Clk) begin
+if (total_wr_pixel > 3840 && total_rd_pixel < 921599) begin
+rd_en <= 1'b1;
+end
+else 
+rd_en <= 1'b0;
 end
 
 
