@@ -207,5 +207,164 @@ The summed gradient values are squared:
 
 #### 4. stream.v
 
+This module implements a streamlined data processor. Since the convolution process takes multiple clock cycles to generate an output data stream, this component is designed for buffering and seamless compatibility with the AXI4-Stream interface.
 
+**Data Capture & Transfer:**
+
+ - When `Valid_in` is asserted, the `Data_in` value is stored in `Temp_Data`.
+ - `Rd_en` (read enable) is set high to indicate data capture.
+ - The stored data is assigned to `Data_out`, and `Valid_out` is asserted.
+
+**End of Stream Indication:**
+
+ - `Last_out` is asserted when `Rd_count` reaches 921599, indicating the last data in the sequence.
+ - After reaching 921600, `Last_out` is de-asserted.
+
+**Ready Signal:**
+
+ - The module remains ready to receive new data until `Rd_count` reaches 921600.
+ - Once 921600 is reached, `Ready_from_IP` is de-asserted, preventing further data intake.
+
+**Summary:**
+
+1. This module buffering between the convolution process to streaming out the data.
+2. This module is adapted to the AXI4-Stream interface with valid, ready, data and t_last signals.
+
+#### 5. Top.v
+
+This module is a high-level integration of a data processing pipeline that takes in streaming 8-bit pixel data, processes it, and outputs the transformed data.
+
+---
+
+### IP creation
+
+After writing the RTL code, it is packed into an IP to be used later in building a system by blocks designing in Vivado.
+
+**Packaging process:**
+
+![image](https://github.com/user-attachments/assets/901cb2f6-118a-42c0-a8cf-f2c118863a62)
+
+1. Creating master and slave interfaces for AXI4 stream protocol and port mapping the appropriate signals.
+
+**MASTER:**
+
+![image](https://github.com/user-attachments/assets/57a4092c-85ea-4896-94f2-cb757c0550c3)
+
+**SLAVE:**
+
+![image](https://github.com/user-attachments/assets/6be9315d-6a7d-48d1-a04e-5f4d63ca38d1)
+
+
+2.	Adding the master and slave signals to the BUS.
+
+3.	Review and package.
+   
+![image](https://github.com/user-attachments/assets/2c7da8eb-610c-4d85-8569-9b542b832b6f)
+
+---
+
+### Sobel filter system
+
+This project features an image processing system that integrates a hardware Sobel filter IP, AXI Direct Memory Access (DMA), AXI GPIO, and a processor. It is developed using PYNQ on the AMD (Xilinx) Zynq 7020 SoC, which combines an FPGA and an ARM processor. The system is designed in Vivado using a block-based approach, incorporating all necessary IPs.
+
+**1.	Processing system:**
+
+![image](https://github.com/user-attachments/assets/858d96d8-40f7-4a9f-ae63-9bfb6f799727)
+
+The Zynq-7000 Processing System (PS) combines a dual-core ARM Cortex-A9 processor with programmable logic (FPGA) to create a highly flexible and powerful platform for a wide range of applications, from embedded systems to complex signal processing. The PS including DDR3/DDR2 SDRAM memory interface for high-speed data storage. The communication between the PS and FPGA is done through a AXI communication protocol.
+
+**2. AXI DMA:**
+
+![image](https://github.com/user-attachments/assets/b4cd7e68-5810-4290-9253-53bb39aa42c0)
+
+The AXI Direct Memory Access IP core is for optimizing data transfer in systems using the AXI protocol. The AXI DMA can perform transfers between memory locations (memory-to-memory) or between peripherals and memory (peripheral-to-memory), offering versatility in data handling. The DMA in this project moving pixel data between memory to the Sobel IP and from the Sobel IP to memory.
+
+**3. AXI GPIO:**
+
+![image](https://github.com/user-attachments/assets/db1838e7-4ff4-4176-bfc2-5f4f33405632)
+
+The AXI GPIO (General Purpose Input/Output) IP core is a versatile component in the architecture that provides a simple way to interface with general-purpose I/O pins on FPGA devices. The IP provides simple register access for reading the state of input pins or writing to output pins, making it easy to control the FPGA hardware. The GPIO in this project allows to set the threshold value.
+
+**4. Sobel filter IP:**
+
+![image](https://github.com/user-attachments/assets/b1ebf941-03a3-4ef2-9bf8-aacd0207cdf2)
+
+This IP doing hardware processing of a Sobel filter on 1280x720 image for edge detection. 
+
+**Connection between the IPs:**
+
+ - The PS is master to DMA and GPIO for control.
+ - The DMA is mater to DDR by using HP0 and HP1 interfaces in the PS.
+ - The Sobel filter is slave to DMA in the read image process and master to DMA in the write image process.
+ - All IPs get 100MHz clock signal, and reset signal from PS.
+
+![image](https://github.com/user-attachments/assets/a59a6ec4-1ff7-432d-adf0-1537c5ca8371)
+
+When the system is ready the block design translated to RTL code by the software and ready to synthesis and implementation to generate Bitstream.
+
+---
+
+### Sobel filter operation
+
+This project utilizes an SD card with an Ubuntu-based Linux operating system, preloaded with Python drivers and libraries specifically designed for the PYNQ-Z2 development board.
+The code is written in Jupyter Notebook, a browser-based development environment that supports live coding, visualization, and the use of open-source libraries.
+
+**Project Directory: "Sobel Filter System"**
+
+The directory contains the following key files:
+
+ - Sobel_V.bit – The FPGA bitstream file implementing the Sobel filter system.
+ - Sobel_V.tcl – A script for automating design setup in Vivado.
+ - Sobel_V.hwh – The hardware handoff file describing the FPGA design.
+ - Example images – Sample images for processing.
+ - Python code – The main script for executing the Sobel filter operation.
+
+**Python Code Overview**
+
+1. Import Libraries – Loads required libraries for image processing.
+2. Load Bitstream – Implements the Sobel filter system in the FPGA.
+3. Define DMA and AXI GPIO –
+ - DMA (Direct Memory Access) handles data transfer.
+ - AXI GPIO is used to apply the threshold value.
+4. Image Preprocessing –
+ - Reads an image.
+ - Converts it to grayscale.
+ - Resizes it to 1280x720.
+ - Saves the resized image.
+ - Sets up memory buffers for processing.
+5. Processing with Sobel Filter –
+ - Resets the DMA.
+ - Sends the image to the Sobel filter IP.
+ - Waits for processing completion.
+ - Saves the processed image.
+ - Deletes memory buffers to free resources.
+
+This workflow enables efficient hardware-accelerated edge detection using the FPGA-based Sobel filter.
+
+**results** 
+
+Image1:
+
+![Ronaldo](https://github.com/user-attachments/assets/1d951a61-4c06-47dc-b909-710bd73d1984)
+
+Image1 after process with threshold = 90:
+
+![Ronaldo_edges(th=90)](https://github.com/user-attachments/assets/bae37540-41fb-48cc-85c8-00c3b2af13b9)
+
+
+Image1 after process with threshold = 150:
+
+![Ronaldo_edges(th=150)](https://github.com/user-attachments/assets/b6e44384-8612-464e-9b23-049790cae1be)
+
+Image2:
+
+![Carry](https://github.com/user-attachments/assets/3b273740-d6b1-44c4-be4c-8668a457f2fc)
+
+Image2 after process with threshold = 90:
+
+![Carry_edges(th=90)](https://github.com/user-attachments/assets/a8c18ffe-c710-40e7-b8d8-af96db8f8228)
+
+Image2 after process with threshold = 150:
+
+![Carry_edges(th=150)](https://github.com/user-attachments/assets/bb182088-c895-4bbc-b02c-447ff5ae7c5f)
 
