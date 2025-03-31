@@ -1,100 +1,85 @@
 `timescale 1ns / 1ps
 
-
 module conv(
-input        i_clk,
-input [71:0] i_pixel_data,
-input        i_pixel_data_valid,
-output reg [7:0] o_convolved_data,
-output reg   o_convolved_data_valid
+input Clk,
+input [7:0] Threshhold_in,       
+input [71:0] pixel_data_in,
+input pixel_data_valid_in,
+output reg [7:0] conv_data_out,
+output reg  conv_data_valid_out
     );
     
 integer i; 
-reg [7:0] kernel1 [8:0];
-reg [7:0] kernel2 [8:0];
-reg [10:0] multData1[8:0];
-reg [10:0] multData2[8:0];
-reg [10:0] sumDataInt1;
-reg [10:0] sumDataInt2;
-reg [10:0] sumData1;
-reg [10:0] sumData2;
-reg multDataValid;
-reg sumDataValid;
-reg convolved_data_valid;
-reg [20:0] convolved_data_int1;
-reg [20:0] convolved_data_int2;
-wire [21:0] convolved_data_int;
-reg convolved_data_int_valid;
+reg [7:0] Gx [8:0];
+reg [7:0] Gy [8:0];
+reg [10:0] mul_Data_x[8:0];
+reg [10:0] mul_Data_y[8:0];
+reg [10:0] sum_Data_temp_x;
+reg [10:0] sum_Data_temp_y;
+reg [10:0] sum_Data_x;
+reg [10:0] sum_Data_y;
+reg mul_Valid;
+reg sum_Valid;
+reg [20:0] Gx_sqr;
+reg [20:0] Gy_sqr;
+wire [21:0] Gt;
+reg conv_data_temp_valid;
 
 initial
 begin
-    kernel1[0] =  1;
-    kernel1[1] =  0;
-    kernel1[2] = -1;
-    kernel1[3] =  2;
-    kernel1[4] =  0;
-    kernel1[5] = -2;
-    kernel1[6] =  1;
-    kernel1[7] =  0;
-    kernel1[8] = -1;
-    
-    kernel2[0] =  1;
-    kernel2[1] =  2;
-    kernel2[2] =  1;
-    kernel2[3] =  0;
-    kernel2[4] =  0;
-    kernel2[5] =  0;
-    kernel2[6] = -1;
-    kernel2[7] = -2;
-    kernel2[8] = -1;
+Gx[0] =  1; Gx[1] =  0; Gx[2] = -1;
+Gx[3] =  2; Gx[4] =  0; Gx[5] = -2;
+Gx[6] =  1; Gx[7] =  0; Gx[8] = -1;  
+ 
+Gy[0] =  1; Gy[1] =  2; Gy[2] = 1;
+Gy[3] =  0; Gy[4] =  0; Gy[5] = 0;
+Gy[6] =  -1; Gy[7] =  -2; Gy[8] = -1;   
 end    
     
-always @(posedge i_clk)
+always @(posedge Clk)
 begin
-    for(i=0;i<9;i=i+1)
-    begin
-        multData1[i] <= $signed(kernel1[i])*$signed({1'b0,i_pixel_data[i*8+:8]});
-        multData2[i] <= $signed(kernel2[i])*$signed({1'b0,i_pixel_data[i*8+:8]});
-    end
-    multDataValid <= i_pixel_data_valid;
+for(i=0;i<9;i=i+1)
+begin
+mul_Data_x[i] <= $signed(Gx[i])*$signed({1'b0,pixel_data_in[i*8+:8]});
+mul_Data_y[i] <= $signed(Gy[i])*$signed({1'b0,pixel_data_in[i*8+:8]});
 end
-
+mul_Valid <= pixel_data_valid_in;
+end
 
 always @(*)
 begin
-    sumDataInt1 = 0;
-    sumDataInt2 = 0;
-    for(i=0;i<9;i=i+1)
-    begin
-        sumDataInt1 = $signed(sumDataInt1) + $signed(multData1[i]);
-        sumDataInt2 = $signed(sumDataInt2) + $signed(multData2[i]);
-    end
+sum_Data_temp_x = 0;
+sum_Data_temp_y = 0;
+for(i=0;i<9;i=i+1)
+begin
+sum_Data_temp_x = $signed(sum_Data_temp_x) + $signed(mul_Data_x[i]);
+sum_Data_temp_y = $signed(sum_Data_temp_y) + $signed(mul_Data_y[i]);
+end
 end
 
-always @(posedge i_clk)
+always @(posedge Clk)
 begin
-    sumData1 <= sumDataInt1;
-    sumData2 <= sumDataInt2;
-    sumDataValid <= multDataValid;
+sum_Data_x <= sum_Data_temp_x;
+sum_Data_y <= sum_Data_temp_y;
+sum_Valid <= mul_Valid;
 end
 
-always @(posedge i_clk)
+always @(posedge Clk)
 begin
-    convolved_data_int1 <= $signed(sumData1)*$signed(sumData1);
-    convolved_data_int2 <= $signed(sumData2)*$signed(sumData2);
-    convolved_data_int_valid <= sumDataValid;
+Gx_sqr <= $signed(sum_Data_x)*$signed(sum_Data_x);
+Gy_sqr <= $signed(sum_Data_y)*$signed(sum_Data_y);
+conv_data_temp_valid <= sum_Valid;
 end
 
-assign convolved_data_int = convolved_data_int1+convolved_data_int2;
-
-    
-always @(posedge i_clk)
+assign Gt = Gx_sqr + Gy_sqr;
+   
+always @(posedge Clk)
 begin
-    if(convolved_data_int > 4000)
-        o_convolved_data <= 8'hff;
-    else
-        o_convolved_data <= 8'h00;
-    o_convolved_data_valid <= convolved_data_int_valid;
+if(Gt > ($signed(Threshhold_in)*$signed(Threshhold_in)))
+conv_data_out <= 8'hff;
+else
+conv_data_out <= 8'h00;
+conv_data_valid_out <= conv_data_temp_valid;
 end
     
 endmodule
