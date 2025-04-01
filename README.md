@@ -35,7 +35,10 @@ Edge detection is a fundamental technique in image processing that helps identif
 - **Image segmentation**
 - **Computer vision**
 
-![image](https://github.com/user-attachments/assets/9d9b3c3c-2056-482d-a68e-aded1098abed)
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/9d9b3c3c-2056-482d-a68e-aded1098abed" width="600">
+</p>
+<p align="center">1. Example of edge detection</p>
 
 #### Objectives of Edge Detection
 - **Highlight Boundaries**: Emphasizes the borders between different regions.
@@ -242,24 +245,37 @@ After writing the RTL code, it is packed into an IP to be used later in building
 
 **Packaging process:**
 
-![image](https://github.com/user-attachments/assets/901cb2f6-118a-42c0-a8cf-f2c118863a62)
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/901cb2f6-118a-42c0-a8cf-f2c118863a62" width="600">
+</p>
+<p align="center">2. Package IP</p>
 
 1. Creating master and slave interfaces for AXI4 stream protocol and port mapping the appropriate signals.
 
 **MASTER:**
 
-![image](https://github.com/user-attachments/assets/57a4092c-85ea-4896-94f2-cb757c0550c3)
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/1ad32281-874a-44a5-8cb2-478bb085724e" width="600">
+</p>
+<p align="center">3. Master interface signals</p>
+
 
 **SLAVE:**
 
-![image](https://github.com/user-attachments/assets/6be9315d-6a7d-48d1-a04e-5f4d63ca38d1)
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/6be9315d-6a7d-48d1-a04e-5f4d63ca38d1" width="600">
+</p>
+<p align="center">4. Slave interface signals</p>
 
 
 2.	Adding the master and slave signals to the BUS.
 
 3.	Review and package.
-   
-![image](https://github.com/user-attachments/assets/2c7da8eb-610c-4d85-8569-9b542b832b6f)
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/2c7da8eb-610c-4d85-8569-9b542b832b6f" width="600">
+</p>
+<p align="center">5. Review and package the IP</p>
 
 ---
 
@@ -269,25 +285,37 @@ This project features an image processing system that integrates a hardware Sobe
 
 **1.	Processing system:**
 
-![image](https://github.com/user-attachments/assets/858d96d8-40f7-4a9f-ae63-9bfb6f799727)
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/858d96d8-40f7-4a9f-ae63-9bfb6f799727" width="400">
+</p>
+<p align="center">6. PS IP</p>
 
 The Zynq-7000 Processing System (PS) combines a dual-core ARM Cortex-A9 processor with programmable logic (FPGA) to create a highly flexible and powerful platform for a wide range of applications, from embedded systems to complex signal processing. The PS including DDR3/DDR2 SDRAM memory interface for high-speed data storage. The communication between the PS and FPGA is done through a AXI communication protocol.
 
 **2. AXI DMA:**
 
-![image](https://github.com/user-attachments/assets/b4cd7e68-5810-4290-9253-53bb39aa42c0)
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/b4cd7e68-5810-4290-9253-53bb39aa42c0" width="400">
+</p>
+<p align="center">7. AXI DMA IP</p>
 
 The AXI Direct Memory Access IP core is for optimizing data transfer in systems using the AXI protocol. The AXI DMA can perform transfers between memory locations (memory-to-memory) or between peripherals and memory (peripheral-to-memory), offering versatility in data handling. The DMA in this project moving pixel data between memory to the Sobel IP and from the Sobel IP to memory.
 
 **3. AXI GPIO:**
 
-![image](https://github.com/user-attachments/assets/db1838e7-4ff4-4176-bfc2-5f4f33405632)
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/db1838e7-4ff4-4176-bfc2-5f4f33405632" width="400">
+</p>
+<p align="center">8. AXI GPIO IP</p>
 
 The AXI GPIO (General Purpose Input/Output) IP core is a versatile component in the architecture that provides a simple way to interface with general-purpose I/O pins on FPGA devices. The IP provides simple register access for reading the state of input pins or writing to output pins, making it easy to control the FPGA hardware. The GPIO in this project allows to set the threshold value.
 
 **4. Sobel filter IP:**
 
-![image](https://github.com/user-attachments/assets/b1ebf941-03a3-4ef2-9bf8-aacd0207cdf2)
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/b1ebf941-03a3-4ef2-9bf8-aacd0207cdf2" width="400">
+</p>
+<p align="center">9. Sobel filter IP</p>
 
 This IP doing hardware processing of a Sobel filter on 1280x720 image for edge detection. 
 
@@ -298,7 +326,10 @@ This IP doing hardware processing of a Sobel filter on 1280x720 image for edge d
  - The Sobel filter is slave to DMA in the read image process and master to DMA in the write image process.
  - All IPs get 100MHz clock signal, and reset signal from PS.
 
-![image](https://github.com/user-attachments/assets/a59a6ec4-1ff7-432d-adf0-1537c5ca8371)
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/a59a6ec4-1ff7-432d-adf0-1537c5ca8371" width="900">
+</p>
+<p align="center">10. Sobel filter system</p>
 
 When the system is ready the block design translated to RTL code by the software and ready to synthesis and implementation to generate Bitstream.
 
@@ -345,26 +376,45 @@ This workflow enables efficient hardware-accelerated edge detection using the FP
 
 Image1:
 
-![Ronaldo](https://github.com/user-attachments/assets/1d951a61-4c06-47dc-b909-710bd73d1984)
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/1d951a61-4c06-47dc-b909-710bd73d1984" width="800">
+</p>
+<p align="center">11. Image 1</p>
 
 Image1 after process with threshold = 90:
 
-![Ronaldo_edges(th=90)](https://github.com/user-attachments/assets/bae37540-41fb-48cc-85c8-00c3b2af13b9)
-
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/bae37540-41fb-48cc-85c8-00c3b2af13b9" width="800">
+</p>
+<p align="center">12. Image 1 after sobel filter with threshold = 90</p>
 
 Image1 after process with threshold = 150:
 
-![Ronaldo_edges(th=150)](https://github.com/user-attachments/assets/b6e44384-8612-464e-9b23-049790cae1be)
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/b6e44384-8612-464e-9b23-049790cae1be" width="800">
+</p>
+<p align="center">13. Image 1 after sobel filter with threshold = 150</p>
+
 
 Image2:
 
-![Carry](https://github.com/user-attachments/assets/3b273740-d6b1-44c4-be4c-8668a457f2fc)
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/3b273740-d6b1-44c4-be4c-8668a457f2fc" width="800">
+</p>
+<p align="center">14. Image 2</p>
 
 Image2 after process with threshold = 90:
 
-![Carry_edges(th=90)](https://github.com/user-attachments/assets/a8c18ffe-c710-40e7-b8d8-af96db8f8228)
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/a8c18ffe-c710-40e7-b8d8-af96db8f8228" width="800">
+</p>
+<p align="center">15. Image 2 after sobel filter with threshold = 90</p>
 
 Image2 after process with threshold = 150:
 
-![Carry_edges(th=150)](https://github.com/user-attachments/assets/bb182088-c895-4bbc-b02c-447ff5ae7c5f)
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/bb182088-c895-4bbc-b02c-447ff5ae7c5f" width="800">
+</p>
+<p align="center">16. Image 2 after sobel filter with threshold = 150</p>
 
+---
