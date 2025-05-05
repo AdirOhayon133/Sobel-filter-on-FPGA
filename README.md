@@ -239,6 +239,46 @@ This module is a high-level integration of a data processing pipeline that takes
 
 ---
 
+## Simulation
+
+This Verilog testbench (`Top_TB`) is designed to simulate and verify the behavior of a module named Top.
+
+1. #### Sets up signals that connect to the Top module:
+
+ - Inputs like clock (`Clk`), input validity (`Valid_in`), data to be sent (`Data_in`), and a signal that mimics readiness of a DMA engine (`Ready_from_dma`).
+ - Outputs like processed data (`Data_out`), its validity (`Valid_out`), end-of-packet indicator (`Last_out`), and a signal that tells whether the downstream IP is ready (`Ready_from_IP`).
+
+2. #### Creates a clock
+ - 100 MHz clock (`Clk`).
+
+3. Starts with all input signals inactive to ensure a clean initial state.
+
+4. #### Begins sending data after 10 nanoseconds:
+
+ - It sets `Valid_in` to 1, meaning that sending data valid now.
+ - Sends the byte `00000001` repeatedly as the input.
+ - Sets `Ready_from_dma` to 1, telling the module that the upstream (DMA) is ready to send data.
+
+5. Waits for 9.216 ms, which corresponds to the time it would take to send a full HD image (1280×720 pixels), assuming 1 pixel is sent every 10 ns.
+
+6. #### After sending the image:
+
+ - It stops sending (`Valid_in` = 0)
+ - Then disables DMA readiness.
+ - Finally, stops the simulation.
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/a26e2bb3-3bb8-42df-93a7-05299f657de3" width="800">
+</p>
+<p align="center">2. The beginning of the process </p>
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/20117a52-b86d-42ce-850b-7b812c0d30c9" width="800">
+</p>
+<p align="center">3. The ending of the process </p>
+
+---
+
 ### IP creation
 
 After writing the RTL code, it is packed into an IP to be used later in building a system by blocks designing in Vivado.
@@ -248,7 +288,7 @@ After writing the RTL code, it is packed into an IP to be used later in building
 <p align="center">
   <img src="https://github.com/user-attachments/assets/901cb2f6-118a-42c0-a8cf-f2c118863a62" width="600">
 </p>
-<p align="center">2. Package IP</p>
+<p align="center">4. Package IP</p>
 
 1. Creating master and slave interfaces for AXI4 stream protocol and port mapping the appropriate signals.
 
@@ -257,7 +297,7 @@ After writing the RTL code, it is packed into an IP to be used later in building
 <p align="center">
   <img src="https://github.com/user-attachments/assets/1ad32281-874a-44a5-8cb2-478bb085724e" width="600">
 </p>
-<p align="center">3. Master interface signals</p>
+<p align="center">5. Master interface signals</p>
 
 
 **SLAVE:**
@@ -265,7 +305,7 @@ After writing the RTL code, it is packed into an IP to be used later in building
 <p align="center">
   <img src="https://github.com/user-attachments/assets/6be9315d-6a7d-48d1-a04e-5f4d63ca38d1" width="600">
 </p>
-<p align="center">4. Slave interface signals</p>
+<p align="center">6. Slave interface signals</p>
 
 
 2.	Adding the master and slave signals to the BUS.
@@ -275,7 +315,7 @@ After writing the RTL code, it is packed into an IP to be used later in building
 <p align="center">
   <img src="https://github.com/user-attachments/assets/2c7da8eb-610c-4d85-8569-9b542b832b6f" width="600">
 </p>
-<p align="center">5. Review and package the IP</p>
+<p align="center">7. Review and package the IP</p>
 
 ---
 
@@ -288,7 +328,7 @@ This project features an image processing system that integrates a hardware Sobe
 <p align="center">
   <img src="https://github.com/user-attachments/assets/858d96d8-40f7-4a9f-ae63-9bfb6f799727" width="400">
 </p>
-<p align="center">6. PS IP</p>
+<p align="center">8. PS IP</p>
 
 The Zynq-7000 Processing System (PS) combines a dual-core ARM Cortex-A9 processor with programmable logic (FPGA) to create a highly flexible and powerful platform for a wide range of applications, from embedded systems to complex signal processing. The PS including DDR3/DDR2 SDRAM memory interface for high-speed data storage. The communication between the PS and FPGA is done through a AXI communication protocol.
 
@@ -297,7 +337,7 @@ The Zynq-7000 Processing System (PS) combines a dual-core ARM Cortex-A9 processo
 <p align="center">
   <img src="https://github.com/user-attachments/assets/b4cd7e68-5810-4290-9253-53bb39aa42c0" width="400">
 </p>
-<p align="center">7. AXI DMA IP</p>
+<p align="center">9. AXI DMA IP</p>
 
 The AXI Direct Memory Access IP core is for optimizing data transfer in systems using the AXI protocol. The AXI DMA can perform transfers between memory locations (memory-to-memory) or between peripherals and memory (peripheral-to-memory), offering versatility in data handling. The DMA in this project moving pixel data between memory to the Sobel IP and from the Sobel IP to memory.
 
@@ -306,7 +346,7 @@ The AXI Direct Memory Access IP core is for optimizing data transfer in systems 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/db1838e7-4ff4-4176-bfc2-5f4f33405632" width="400">
 </p>
-<p align="center">8. AXI GPIO IP</p>
+<p align="center">10. AXI GPIO IP</p>
 
 The AXI GPIO (General Purpose Input/Output) IP core is a versatile component in the architecture that provides a simple way to interface with general-purpose I/O pins on FPGA devices. The IP provides simple register access for reading the state of input pins or writing to output pins, making it easy to control the FPGA hardware. The GPIO in this project allows to set the threshold value.
 
@@ -315,7 +355,7 @@ The AXI GPIO (General Purpose Input/Output) IP core is a versatile component in 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/b1ebf941-03a3-4ef2-9bf8-aacd0207cdf2" width="400">
 </p>
-<p align="center">9. Sobel filter IP</p>
+<p align="center">11. Sobel filter IP</p>
 
 This IP doing hardware processing of a Sobel filter on 1280x720 image for edge detection. 
 
@@ -329,7 +369,7 @@ This IP doing hardware processing of a Sobel filter on 1280x720 image for edge d
 <p align="center">
   <img src="https://github.com/user-attachments/assets/a59a6ec4-1ff7-432d-adf0-1537c5ca8371" width="900">
 </p>
-<p align="center">10. Sobel filter system</p>
+<p align="center">12. Sobel filter system</p>
 
 When the system is ready the block design translated to RTL code by the software and ready to synthesis and implementation to generate Bitstream.
 
@@ -379,21 +419,21 @@ Image1:
 <p align="center">
   <img src="https://github.com/user-attachments/assets/1d951a61-4c06-47dc-b909-710bd73d1984" width="800">
 </p>
-<p align="center">11. Image 1</p>
+<p align="center">13. Image 1</p>
 
 Image1 after process with threshold = 90:
 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/bae37540-41fb-48cc-85c8-00c3b2af13b9" width="800">
 </p>
-<p align="center">12. Image 1 after sobel filter with threshold = 90</p>
+<p align="center">14. Image 1 after sobel filter with threshold = 90</p>
 
 Image1 after process with threshold = 150:
 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/b6e44384-8612-464e-9b23-049790cae1be" width="800">
 </p>
-<p align="center">13. Image 1 after sobel filter with threshold = 150</p>
+<p align="center">15. Image 1 after sobel filter with threshold = 150</p>
 
 
 Image2:
@@ -401,20 +441,20 @@ Image2:
 <p align="center">
   <img src="https://github.com/user-attachments/assets/3b273740-d6b1-44c4-be4c-8668a457f2fc" width="800">
 </p>
-<p align="center">14. Image 2</p>
+<p align="center">16. Image 2</p>
 
 Image2 after process with threshold = 90:
 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/a8c18ffe-c710-40e7-b8d8-af96db8f8228" width="800">
 </p>
-<p align="center">15. Image 2 after sobel filter with threshold = 90</p>
+<p align="center">17. Image 2 after sobel filter with threshold = 90</p>
 
 Image2 after process with threshold = 150:
 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/bb182088-c895-4bbc-b02c-447ff5ae7c5f" width="800">
 </p>
-<p align="center">16. Image 2 after sobel filter with threshold = 150</p>
+<p align="center">18. Image 2 after sobel filter with threshold = 150</p>
 
 ---
