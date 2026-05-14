@@ -1,12 +1,14 @@
 `timescale 1ns / 1ps
 
-module conv(
-input Clk,
+module Conv(
+
+input clk,
 input [7:0] Threshhold_in,       
-input [71:0] pixel_data_in,
-input pixel_data_valid_in,
+input [71:0] data_in,
+input data_valid_in,
 output reg [7:0] conv_data_out,
 output reg  conv_data_valid_out
+
     );
     
 integer i; 
@@ -36,14 +38,14 @@ Gy[3] =  0; Gy[4] =  0; Gy[5] = 0;
 Gy[6] =  -1; Gy[7] =  -2; Gy[8] = -1;   
 end    
     
-always @(posedge Clk)
+always @(posedge clk)
 begin
 for(i=0;i<9;i=i+1)
 begin
-mul_Data_x[i] <= $signed(Gx[i])*$signed({1'b0,pixel_data_in[i*8+:8]});
-mul_Data_y[i] <= $signed(Gy[i])*$signed({1'b0,pixel_data_in[i*8+:8]});
+mul_Data_x[i] <= $signed(Gx[i])*$signed({1'b0,data_in[i*8+:8]});
+mul_Data_y[i] <= $signed(Gy[i])*$signed({1'b0,data_in[i*8+:8]});
 end
-mul_Valid <= pixel_data_valid_in;
+mul_Valid <= data_valid_in;
 end
 
 always @(*)
@@ -57,14 +59,14 @@ sum_Data_temp_y = $signed(sum_Data_temp_y) + $signed(mul_Data_y[i]);
 end
 end
 
-always @(posedge Clk)
+always @(posedge clk)
 begin
 sum_Data_x <= sum_Data_temp_x;
 sum_Data_y <= sum_Data_temp_y;
 sum_Valid <= mul_Valid;
 end
 
-always @(posedge Clk)
+always @(posedge clk)
 begin
 Gx_sqr <= $signed(sum_Data_x)*$signed(sum_Data_x);
 Gy_sqr <= $signed(sum_Data_y)*$signed(sum_Data_y);
@@ -73,7 +75,7 @@ end
 
 assign Gt = Gx_sqr + Gy_sqr;
    
-always @(posedge Clk)
+always @(posedge clk)
 begin
 if(Gt > ($signed(Threshhold_in)*$signed(Threshhold_in)))
 conv_data_out <= 8'hff;
