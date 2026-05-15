@@ -77,96 +77,54 @@ The **Sobel filter** is a widely used edge detection technique that calculates t
 ## Application
 
 In this project the Sobel filter is implemented in hardware using Verilog RTL code and then package as IP in Vivado design software.
-The IP contain 4 components under Top.v that suitable for AXI4 Stream protocol.
+The IP contain 3 components under Top_AXIS.v that suitable for AXI4 Stream protocol.
 
 ### Verilog code explain 
 
 #### 1. Line_Buffer.v
 
-The Line_Buffer module in Verilog is a simple memory buffer designed to store a sequence of 8-bit values (pixel data length). It maintains a line buffer with a total length of 1280 bytes (width of an image).
-The output is vector of 24-bit, three neighboring pixels.
-The Line_Buffer module is synchronous to the rising edge of the clock signal (`Clk`).
+The Line_Buffer module implements a single-row memory buffer used in FPGA-based image processing systems. Its purpose is to store one full image row and provide neighboring pixels required for convolution. The module supports continuous streaming operation by simultaneously writing incoming pixels and generating a 3-pixel horizontal output window. The design also includes simple zero-padding at the image boundaries to support edge processing.
 
- - The module uses an internal memory array `line_B` that can hold 1280 bytes.
- - A write pointer `wrPntr` keeps track of where new data is written.
- - A read pointer `rdPntr` keeps track of which data is being read.
+The module operates using the system clock `clk` and reset signal `rst`. The input `wr_in` enables writing incoming pixels into the buffer, while `rd_in` enables reading data from the buffer. The input `data_in[7:0]` represents an 8-bit grayscale pixel. The output `data_out[23:0]` contains three adjacent pixels concatenated together into a 24-bit bus. The design contains a memory array called `line_B` with 1282 storage locations, each storing one 8-bit pixel. Two internal pointers are used to manage memory access: `wrPntr` controls the write position and `rdPntr` controls the read position. The first memory location `(line_B[0])` and the last memory location `(line_B[1281])` are initialized to zero. These additional locations are used for zero padding at the image edges.
 
-**Writing Data:**
+**Module Operation:**
 
- - When the `data_valid_in` signal is high, new data (`data_in`) is written to the location indexed by `wrPntr`.
- - The `wrPntr` increments after every write operation.
- - If `wrPntr` reaches the end of the buffer (index 1279), it wraps around to 0.
+During operation, incoming pixels are continuously written into the line buffer whenever `wr_in` is asserted. The pixel is stored at the memory location indexed by `wrPntr + 1`. This means that actual image pixels are stored between memory locations 1 and 1280, while the first and last locations remain fixed at zero.
+When `rd_in` assert, the reading data from the buffer process start. The module continuously generates a 3-pixel output window using the current read pointer position. The output consists of three consecutive pixels from memory: the current pixel, the next pixel, and the following pixel. This creates the horizontal 3×3 window that required for convolution processing. The write pointer `wrPntr` increments whenever a new pixel is written into memory, and the read pointer `rdPntr` increments whenever data is read. Both pointers wrap around to zero when they reach pixel index 1279, enabling continuous circular buffering for streaming image processing. Both are synchornices to `clk`. This mechanism supports uninterrupted real-time operation. The reset signal `rst` is synchornices to `clk`, when `rst = '1'`, `wrPntr` and `rdPntr` set to '0'.
 
-**Reading Data:**
+#### 2. Control.v
 
-The module outputs 3 consecutive bytes from the buffer, starting at the location indexed by `rdPntr`.
-This is useful in image processing where three consecutive pixels may be needed at once.
-When `rd_data_in` is high, `rdPntr` increments to move to the next set of pixels.
-Like the write pointer, `rdPntr` wraps around when reaching the end of the buffer.
+The Control module is the main controller of the Sobel FPGA architecture. It manages the image-stream flow between the DMA interface, the line buffers, and the convolution module. The controller is responsible for:
 
-**Reset Behavior:**
+ - Writing incoming pixels into line buffers.
+ - Reading neighboring rows for convolution.
+ - Generating the 3×3 Sobel window.
+ - Synchronizing streaming operation.
+ - Managing frame processing.
+ - Generating AXI-style handshake signals.
+ - Detecting the last pixel in the frame.
+ - Handling image boundary conditions using zero padding.
 
-If `rst` is high, both the `wrPntr` and `rdPntr` are reset to 0, clearing the buffer state.
+**Inputs**
+ - `clk` — Main system clock controlling all synchronous operations.
+ - `rst` — Global reset signal used to initialize counters, FSM states, and synchronization logic.
+ - `data_valid_in` — Indicates valid incoming pixel data from DMA.
+ - `data_in[7:0]` — Incoming grayscale pixel stream.
+ - `valid_after_conv` — Indicates valid processed output from convolution module.
+ - `ready_from_DMA` — Handshake signal indicating downstream DMA can accept data.
 
-**Summary:**
-
-This module is useful in edge detection application when multiple pixels from a single line are required at a time. The Line Buffer efficiently manages this by providing three adjacent pixels for processing.
-
-#### 2. control.v
-
-The control module manages the buffering and transfer of pixel data using four instances of the Line_Buffer module. This module coordinates writing and reading of pixel data while ensuring proper sequencing of buffered lines.
-It then outputs a 72-bit concatenation of pixel values from three consecutive buffers.
-The control module is synchronous to the rising edge of the clock signal (`Clk`).
-
-**Writing Data to Line Buffers:**
-
-**Key Writing Logic**
- - If `pixel_data_valid_in` is high, data is written to the selected buffer.
- - When `wr_pixel_c` reaches 1280, it resets to 0, and `wr_buffer` moves to the next buffer.
- - The total written pixels (`total_wr_pixel`) counter keeps track of the total data stored.
-
-**Process**
- - Incoming pixel data (`pixel_data_in`) is written to one of the four Line Buffers (`lB0` to `lB3`).
- - The write pointer (`wr_pixel_c`) tracks where data is being written in the buffer.
- - After 1280 pixels (one full image width), writing switches to the next buffer (`wr_buffer` increments).
- - `wr_en_lb` determines which buffer is currently receiving data:
-    - `wr_buffer` = 0 → Write to `lB0`
-    - `wr_buffer` = 1 → Write to `lB1`
-    - `wr_buffer` = 2 → Write to `lB2`
-    - `wr_buffer` = 3 → Write to `lB3`
-
-**Reading Data from Line Buffers:**
-
-**Key Reading Logic**
- - Reading is enabled only when `dma_ready_in` is high (ensuring the receiver is ready).
- - `rd_pixel_c` increments after each read.
- - When `rd_pixel_c` reaches 1280, it resets, and `rd_buffer` moves to the next set of three buffers.
-
-**Process**
- - Output pixels are generated by reading from three adjacent line buffers.
- - The read pointer (`rd_pixel_c`) tracks the current read position.
- - Once 3 rows of the image has been written (`total_wr_pixel` > 3840), reading starts (`rd_en` is enabled).
- - Data is read in overlapping rows, cycling through the buffers:
-   - `rd_buffer` = 0 → `{lB2, lB1, lB0}`
-   - `rd_buffer` = 1 → `{lB3, lB2, lB1}`
-   - `rd_buffer` = 2 → `{lB0, lB3, lB2}`
-   - `rd_buffer` = 3 → `{lB1, lB0, lB3}`
- - The output concatenates 3 consecutive pixel values, forming a 72-bit output (`pixel_data_out`).
+**Outputs**
+ - `data_valid_to_conv` — Indicates valid 3×3 convolution window output.
+ - `data_out[71:0]` — Complete 3×3 pixel window sent to convolution engine.
+ - `last_bit` — Indicates last processed pixel in frame.
+ - `ready_to_DMA` — Indicates controller can accept more incoming pixels.
+   
+**Module Operation:**
 
 
-**Synchronization and Control:**
 
- - Reading starts only when sufficient data has been written (`total_wr_pixel` > 3840).
- - Reading stops when all required pixels are read (`total_rd_pixel` < 921599).
- - `rd_en_lb` determines which buffers are being read based on `rd_buffer`.
 
-**Summary:**
-
-The module buffers pixel data line by line.
-It reads and outputs three lines at a time to form a 72-bit pixel window.
-It cycles through four buffers to maintain continuous data flow.
-
-#### 3. conv.v
+#### 3. Conv.v
 
 This module receives 3 rows of 3 neighboring pixels (72-bit) and performs convolution between the pixels and the X-kernel and Y-kernel of the Sobel filter, calculates the gradient magnitude of the two convolution results and compares the result to a threshold value to determine if the detected edge is significant.
 
@@ -208,32 +166,7 @@ The summed gradient values are squared:
 5. Compare against the threshold to classify as edge (`0xFF`) or non-edge (`0x00`).
 6. This module enables real-time edge detection in FPGA-based image processing pipelines.
 
-#### 4. stream.v
-
-This module implements a streamlined data processor. Since the convolution process takes multiple clock cycles to generate an output data stream, this component is designed for buffering and seamless compatibility with the AXI4-Stream interface.
-
-**Data Capture & Transfer:**
-
- - When `Valid_in` is asserted, the `Data_in` value is stored in `Temp_Data`.
- - `Rd_en` (read enable) is set high to indicate data capture.
- - The stored data is assigned to `Data_out`, and `Valid_out` is asserted.
-
-**End of Stream Indication:**
-
- - `Last_out` is asserted when `Rd_count` reaches 921599, indicating the last data in the sequence.
- - After reaching 921600, `Last_out` is de-asserted.
-
-**Ready Signal:**
-
- - The module remains ready to receive new data until `Rd_count` reaches 921600.
- - Once 921600 is reached, `Ready_from_IP` is de-asserted, preventing further data intake.
-
-**Summary:**
-
-1. This module buffering between the convolution process to streaming out the data.
-2. This module is adapted to the AXI4-Stream interface with valid, ready, data and t_last signals.
-
-#### 5. Top.v
+#### 4. Top_AXIS.v
 
 This module is a high-level integration of a data processing pipeline that takes in streaming 8-bit pixel data, processes it, and outputs the transformed data.
 
